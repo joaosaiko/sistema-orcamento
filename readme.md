@@ -1,96 +1,151 @@
-**Sistema de Orçamento - Gráfica (Unitários em Tabelas)**
 
-Um sistema de orçamentos simples e focado em gráficas, construído em Python com interface gráfica (Tkinter + `ttkbootstrap`) e suporte completo para produtos unitários com faixas/tabelas de preço.
+<!--- Modern README: emojis, tabela, comandos prontos --->
 
-**Resumo**: Este repositório contém uma pequena aplicação desktop que permite cadastrar produtos (unitários, por m² ou por metro linear), definir faixas de preço para produtos unitários, montar propostas (serviços/produtos) e gerar documentos `.docx` de saída. O design prioriza usabilidade: popups para CRUD de produtos/faixas, cálculo automático de total e uma UI limpa.
+# 🚀 Sistema de Orçamento - Gráfica (Unitários em Tabelas)
 
-**Badges**
-- **Status:**: Em desenvolvimento
-- **Linguagem:**: `Python 3.x`
+Um aplicativo desktop leve para criar propostas e orçamentos usado por gráficas e prestadores de serviços. Fornece suporte a produtos por unidade (com faixas de preço), por m² e por metro linear, com UI baseada em `ttkbootstrap` e exportação para `.docx`.
 
-**Destaques / Features**
-- **Faixas unitárias**: Produtos do tipo `unit` podem ter várias faixas (qtd_min, qtd_max, preço) armazenadas em `faixas_unitarias`.
-- **Banco SQLite embutido**: Dados persistidos em `produtos.db` (criado/atualizado automaticamente).
-- **UI moderna**: Interface construída com `ttkbootstrap` (tema `darkly`) e componentes organizados em `UI.AppUI`.
-- **Popups de gerenciamento**: `NovoProdutoPopup` e `GerenciadorPopup` para criar/editar produtos e gerenciar faixas.
-- **Geração de DOCX**: Integração opcional com `python-docx` (há suporte para usar um `docxGenerator` quando disponível).
-- **Calculadora de total**: Lógica isolada em `total_calculator.py` para facilitar testes e reuso.
+**Status:** 🛠️ Em desenvolvimento · **Linguagem:** 🐍 Python 3.x
 
-**Arquivos Principais**
-- `budget_system.py`: Aplicação principal (UI + lógica de orçamentos). Use como referência para execução direta.
-- `total_calculator.py`: Classe `TotalCalculator` responsável por calcular total de um item conforme tipo (por unidade, por m², por m).
-- `UI.py`: Builder da interface (`AppUI`) que monta e liga widgets à instância `OrcamentoApp`.
-- `gerenciador_popup.py`: Popups para criar/editar produtos e gerenciar faixas unitárias.
-- `requirements.txt`: Dependências sugeridas.
+## 📌 Tabela de Conteúdos
 
-**Instalação Rápida**
-1. Clone o repositório:
+- [Destaques](#-destaques)
+- [Arquivos Principais](#-arquivos-principais)
+- [Instalação Rápida](#-instalação-rápida)
+- [Comandos Úteis (copy & paste)](#-comandos-úteis-copy--paste)
+- [Uso / Fluxo Básico](#-uso--fluxo-básico)
+- [Estrutura do Banco de Dados](#-estrutura-do-banco-de-dados)
+- [Solução de Problemas](#-solução-de-problemas)
+- [Contribuição e Roadmap](#-contribuição-e-roadmap)
+- [Licença](#-licença)
 
-	`git clone <repo-url>`
+## ✨ Destaques
 
-2. Crie/ative um ambiente virtual (recomendado):
+| Feature | Descrição |
+|---|---|
+| Faixas unitárias | Produtos `unit` podem ter várias faixas (qtd_min, qtd_max, preço) gerenciadas em uma UI dedicada. |
+| Persistência | SQLite (`produtos.db`) criado/atualizado automaticamente. |
+| UI | Interface com `ttkbootstrap` (tema `darkly`) — botão, popups, treeviews. |
+| Export | Geração de `.docx` via `python-docx` (suporte a templates). |
+| Modularidade | Lógica de cálculo isolada em `total_calculator.py` para testes e reuso. |
 
-	- Windows (Powershell):
-	  `python -m venv .venv; .\.venv\Scripts\Activate.ps1`
+## 📁 Arquivos Principais
 
-3. Instale dependências:
+- `budget_system.py` — Aplicação principal (UI + lógica). Inicia a janela principal.
+- `total_calculator.py` — Classe `TotalCalculator` (cálculo de total por tipo).
+- `UI.py` — `AppUI` monta a interface e expõe widgets usados pela app.
+- `gerenciador_popup.py` — Popups para criar/editar produtos e gerenciar faixas.
+- `requirements.txt` — Dependências recomendadas.
 
-	`pip install -r requirements.txt`
+## ⚙️ Instalação Rápida
 
-4. Execute a aplicação:
+Clone e rode localmente (comandos prontos para PowerShell):
 
-	`python budget_system.py`
+```powershell
+git clone <repo-url>
+cd sistema-orcamento
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python budget_system.py
+```
 
-Observação: se preferir, você também pode executar `budget_system.py` diretamente a partir do seu IDE.
+Observações:
+- Se você usa `cmd.exe`, ative o venv com: `.venv\Scripts\activate.bat`
+- Se preferir, abra `budget_system.py` no seu IDE e rode a partir daí.
 
-**Uso / Fluxo Básico**
-- **Cadastrar produto**: clique em `Adicionar Novo Produto` e preencha nome, tipo e preços. Para produtos `unit`, abra o painel de faixas e adicione intervalos com preço.
-- **Gerenciar faixas**: selecione um produto na lista e clique em `Gerenciar Faixas (unit.)` para abrir a interface de edição de faixas.
-- **Adicionar serviço à proposta**: preencha descrição, largura, altura (em cm), quantidade e preço; clique em `Calcular Total` e depois em `Adicionar Serviço`.
-- **Gerar documento**: clique em `Gerar DOCX` para exportar a proposta (requer `python-docx`; há suporte a um template `.docx`).
+## 🧰 Comandos Úteis (Copy & Paste)
 
-**Banco de Dados e Estrutura**
-- Arquivo DB: `produtos.db`
-- Tabelas principais criadas/atualizadas automaticamente:
-  - `produtos` (compatível com versão anterior; armazena `tipo`, `preco_m2`, `preco_m`, `preco_unit`, `tiers`, etc.)
-  - `produtos_unitarios` (mapeia produtos unitários por nome para gerenciar faixas)
-  - `faixas_unitarias` (cada registro contém `produto_id`, `qtd_min`, `qtd_max`, `preco`)
+- Clonar (substitua `<repo-url>`):
 
-**Extensibilidade / Arquitetura**
-- A UI é separada em `UI.AppUI` para facilitar customizações ou uso em outro projeto.
-- A lógica de cálculo foi extraída para `total_calculator.py` (fácil de testar isoladamente).
-- Módulos opcionalmente detectados: `features.clean` e `features.gerar_docx` são utilizados quando presentes.
+```powershell
+git clone <repo-url>
+```
 
-**Dependências**
-- `ttkbootstrap` (UI moderna)
-- `python-docx` (geração de `.docx`)
-- `pandas` (usado em algumas rotinas opcionais — ver `features/`)
+- Criar/ativar venv (PowerShell):
 
-Instale tudo com: `pip install -r requirements.txt`
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+```
 
-**Erros Comuns / Soluções**
-- `ModuleNotFoundError: ttkbootstrap` — instale com `pip install ttkbootstrap`.
-- Problemas com `.docx`: confirme `python-docx` instalado e que o template selecionado é um `.docx` válido.
-- Se a DB estiver corrompida, renomeie `produtos.db` e reinicie a aplicação para recriar as tabelas.
+- Instalar dependências:
 
-**Contribuindo**
-- Abra uma issue para bugs ou ideias.
-- Para PRs: mantenha mudanças focadas, adicione testes quando possível e documente alterações.
+```powershell
+pip install -r requirements.txt
+```
 
-**Roadmap / Melhorias sugeridas**
-- Importação/Exportação CSV para listas de produtos.
-- Validação e testes unitários para `TotalCalculator`.
-- Suporte a múltiplos templates e seleção de layout ao gerar `.docx`.
+- Rodar a aplicação:
 
-**Licença**
-- Veja o arquivo `LICENSE` no repositório para detalhes.
+```powershell
+python budget_system.py
+```
+
+- Recriar banco de dados (ou reset simples): renomeie o arquivo `produtos.db` antes de rodar, por exemplo:
+
+```powershell
+mv produtos.db produtos.db.bak
+python budget_system.py
+```
+
+## 🧭 Uso / Fluxo Básico
+
+1. Abrir a aplicação (`python budget_system.py`).
+2. Para cadastrar um produto: clique em **Adicionar Novo Produto**.
+	 - Escolha tipo: `unit` | `m2` | `m`.
+	 - Para `unit` adicione faixas (Qtd min / Qtd max / Preço) no popup.
+3. Selecione o produto no combobox, insira descrição, dimensões (cm), quantidade e preço.
+4. Clique em **Calcular Total** e depois **Adicionar Serviço** para inserir na proposta.
+5. Ao finalizar, use **Gerar DOCX** para exportar (pode usar template selecionável).
+
+## 🗄️ Estrutura do Banco de Dados
+
+Tabelas criadas automaticamente:
+
+- `produtos` — mantém compatibilidade com esquema anterior. Campos: `id`, `nome`, `tipo`, `largura`, `altura`, `preco_m2`, `preco_m`, `preco_unit`, `tiers`.
+- `produtos_unitarios` — mapeia produtos unitários por `id` e `nome`.
+- `faixas_unitarias` — colunas: `id`, `produto_id`, `qtd_min`, `qtd_max`, `preco`.
+
+O arquivo é `produtos.db` na raiz do projeto.
+
+## 🐞 Solução de Problemas (rápido)
+
+- Erro: `ModuleNotFoundError: ttkbootstrap`
+	- Solução: `pip install ttkbootstrap`
+
+- Problema ao gerar `.docx`
+	- Confirme `python-docx` instalado: `pip install python-docx`.
+	- Verifique se o template é um `.docx` válido.
+
+- Banco corrompido ou perder dados
+	- Renomeie `produtos.db` e reinicie; as tabelas serão recriadas.
+
+## 🤝 Contribuição
+
+- Abra uma issue para bugs/ideias.
+- Faça fork → branch com nome claro → PR com descrição e testes se possível.
+
+Sugestões de PRs úteis:
+
+- Adicionar testes unitários para `TotalCalculator`.
+- Exemplos de templates `.docx` e screenshots.
+- Automatizar CI (linters/tests).
+
+## 🛣️ Roadmap / Melhorias Sugeridas
+
+- Import/Export CSV de produtos.
+- Melhor UX para sobreposição de faixas (warnings em tempo real).
+- Sistema de templates múltiplos para `.docx`.
+
+## 📜 Licença
+
+Consulte o arquivo `LICENSE` neste repositório.
 
 ---
 
-Se quiser, eu posso:
-- gerar um README traduzido para outro idioma;
-- adicionar exemplos de uso com screenshots;
-- preparar um script de instalação automatizado.
+Se desejar, eu posso:
 
-Diga qual próximo passo prefere.
+- 🎨 Gerar imagens / screenshots para incluir no README;
+- 🧪 Criar um pequeno teste para `TotalCalculator` e adicionar ao repo;
+- 📦 Preparar um script `install.ps1` que automatiza venv + pip install + run.
+
+Diga qual desses passos você quer que eu execute agora.
 
