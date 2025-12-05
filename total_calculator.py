@@ -32,6 +32,44 @@ class TotalCalculator:
 		larg_raw = self.ent_larg.get().strip() if hasattr(self.ent_larg, 'get') else str(self.ent_larg)
 		alt_raw = self.ent_alt.get().strip() if hasattr(self.ent_alt, 'get') else str(self.ent_alt)
 
+		def _parse_number_to_meters(s):
+			"""Converte uma string numérica para metros.
+			Aceita decimais com '.' ou ','; se o número for maior que 10 assume-se centímetros e divide por 100.
+			Retorna None se inválido ou vazio.
+			"""
+			if not s:
+				return None
+			s = str(s).strip().replace(',', '.')
+			if s.upper() == 'X':
+				return None
+			try:
+				v = float(s)
+			except Exception:
+				return None
+			# se valor aparentemente em centímetros (ex: 80, 120) converte para metros
+			if v > 10:
+				return v / 100.0
+			# senão trata como metros (ex: 1.2, 0.8)
+			return v
+
+		def _maybe_split_pair(field):
+			"""Se o campo contém 'x' como '80x120', retorna tuple (a, b) como strings (sem espaços).
+			Caso contrário retorna None.
+			"""
+			if not field:
+				return None
+			if 'x' in field.lower():
+				parts = [p.strip() for p in field.lower().split('x') if p.strip()]
+				if len(parts) >= 2:
+					return parts[0], parts[1]
+			return None
+
+		# tenta capturar entradas do tipo '80x120' colocadas em apenas um campo
+		pair = _maybe_split_pair(larg_raw) or _maybe_split_pair(alt_raw)
+		if pair and (not larg_raw or not alt_raw or 'x' in larg_raw.lower() or 'x' in alt_raw.lower()):
+			# se encontramos um par em algum campo, atualizamos largura/altura bruta
+			larg_raw, alt_raw = pair[0], pair[1]
+
 		try:
 			preco = float(preco_raw) if preco_raw else 0.0
 		except Exception:
@@ -43,26 +81,20 @@ class TotalCalculator:
 
 		total = 0.0
 		if tipo == 'Por m²':
-			# converter cm -> metros
-			try:
-				largura = float(larg_raw) / 100.0 if larg_raw and larg_raw != 'X' else None
-				altura = float(alt_raw) / 100.0 if alt_raw and alt_raw != 'X' else None
-				if largura and altura:
-					area = largura * altura
-					total = area * preco * qtd
-				else:
-					total = preco * qtd
-			except Exception:
+			largura_m = _parse_number_to_meters(larg_raw)
+			altura_m = _parse_number_to_meters(alt_raw)
+			if largura_m and altura_m:
+				area = largura_m * altura_m
+				total = area * preco * qtd
+			else:
+				# se não foi possível calcular área, cai para preço * qtd
 				total = preco * qtd
 		elif tipo == 'Por m':
-			# largura representa o comprimento em metros ou cm?
-			try:
-				comprimento = float(larg_raw) / 100.0 if larg_raw and larg_raw != 'X' else None
-				if comprimento:
-					total = comprimento * preco * qtd
-				else:
-					total = preco * qtd
-			except Exception:
+			# comprimento pode ser em cm (ex: 80) ou m (ex: 1.2)
+			comprimento_m = _parse_number_to_meters(larg_raw)
+			if comprimento_m:
+				total = comprimento_m * preco * qtd
+			else:
 				total = preco * qtd
 		else:  # Por unidade
 			total = preco * qtd
