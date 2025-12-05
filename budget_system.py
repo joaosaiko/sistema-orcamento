@@ -50,6 +50,11 @@ try:
 except Exception:
     AppUI = None
 
+try:
+    from carregar_produto import CarregarProduto
+except Exception:
+    CarregarProduto = None
+
 DB_PATH = "produtos.db"
 
 # ----------------------- Helpers para DB das faixas unitárias -----------------------
@@ -207,6 +212,8 @@ class OrcamentoApp(tk.Tk):
         self.conn = get_conn()
         init_db(self.conn)
         self._corrigir_estrutura_produtos()
+        # loader de produtos (orientado a objeto)
+        self.produto_loader = CarregarProduto(self) if CarregarProduto else None
 
         # Produto selecionado
         self.produto_selecionado = tk.StringVar()
@@ -281,57 +288,10 @@ class OrcamentoApp(tk.Tk):
             pass
 
     def carregar_produto(self, event=None):
-        nome = self.produto_selecionado.get()
-        if not nome:
-            return
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT tipo, largura, altura, preco_m2, preco_m, preco_unit, tiers FROM produtos WHERE nome = ?", (nome,))
-        result = cursor.fetchone()
-        if result:
-            tipo, largura, altura, preco_m2, preco_m, preco_unit, tiers_json = result
-            self.ent_desc.delete(0, tk.END)
-            self.ent_desc.insert(0, nome)
-            self.ent_larg.delete(0, tk.END)
-            self.ent_alt.delete(0, tk.END)
-            if largura:
-                self.ent_larg.insert(0, str(largura))
-            if altura:
-                self.ent_alt.insert(0, str(altura))
-            self.ent_preco.delete(0, tk.END)
-
-            if tipo == 'm2' and preco_m2 is not None:
-                self.ent_preco.insert(0, str(preco_m2))
-                self.tipo_calculo.set('Por m²')
-            elif tipo == 'm' and preco_m is not None:
-                self.ent_preco.insert(0, str(preco_m))
-                self.tipo_calculo.set('Por m')
-            elif tipo == 'unit':
-                # tenta carregar preco por faixa (com qtd atual) ou preco_unit
-                self.tipo_calculo.set('Por unidade')
-                qtd = None
-                try:
-                    qtd_raw = self.ent_qtd.get().strip()
-                    qtd = int(qtd_raw) if qtd_raw else None
-                except Exception:
-                    qtd = None
-                if qtd:
-                    preco = get_preco_por_quantidade(self.conn, nome, qtd)
-                    if preco is not None:
-                        self.ent_preco.insert(0, str(preco))
-                        self.calcular_total()
-                        return
-                # fallback para preco_unit
-                if preco_unit is not None:
-                    self.ent_preco.insert(0, str(preco_unit))
-                else:
-                    # se tiver faixas, mostra a primeira como referência
-                    faixas = get_faixas_por_produto(self.conn, nome)
-                    if faixas:
-                        self.ent_preco.insert(0, str(faixas[0]['preco']))
-
-            self.ent_qtd.delete(0, tk.END)
-            self.ent_qtd.insert(0, "1")
-            self.calcular_total()
+        if self.produto_loader:
+            return self.produto_loader.carregar_produto(event)
+        # fallback: nothing to do if loader missing
+        return None
 
     # ---------------- Funções de remoção/limpeza ----------------
     def remover_produto_db(self):
@@ -409,6 +369,10 @@ class OrcamentoApp(tk.Tk):
         cursor.execute("SELECT tipo FROM produtos WHERE nome = ?", (nome,))
         r = cursor.fetchone()
         tipo = r[0] if r else None
+
+        # delegate to produto_loader when available
+        if self.produto_loader:
+            return self.produto_loader.on_qtd_change(event)
 
         if tipo == 'unit':
             qtd = self.ent_qtd.get().strip()
