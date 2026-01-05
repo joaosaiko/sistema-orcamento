@@ -31,14 +31,25 @@ class docxGenerator:
                             self.replace_text_keep_formatting(p, placeholder, new_text)
 
     def gerar_docx(self):
-        tpl = self.template_path.get()
+        def _val(x):
+            try:
+                g = getattr(x, 'get', None)
+                if callable(g):
+                    return g()
+            except Exception:
+                pass
+            return x
+
+        tpl = _val(self.template_path)
         if not tpl or not os.path.isfile(tpl):
             messagebox.showwarning('Aviso', 'Selecione um modelo .docx válido')
             return
-        if not self.cliente.get().strip():
+        cliente_val = _val(self.cliente)
+        if not (isinstance(cliente_val, str) and cliente_val.strip()):
             messagebox.showwarning('Aviso', 'Informe o nome do cliente')
             return
-        if not self.numero_proposta.get().strip():
+        nro_prop = _val(self.numero_proposta)
+        if not (isinstance(nro_prop, str) and nro_prop.strip()):
             messagebox.showwarning('Aviso', 'Informe o número da proposta')
             return
 
@@ -48,9 +59,9 @@ class docxGenerator:
             messagebox.showerror('Erro', f'Não foi possível abrir o modelo: {e}')
             return
 
-        cliente_txt = self.cliente.get().upper()
-        proposta_txt = self.proposta_completa.get()
-        data_txt = self.data_label.get()
+        cliente_txt = str(_val(self.cliente)).upper()
+        proposta_txt = str(_val(self.proposta_completa))
+        data_txt = str(_val(self.data_label))
         self.replace_placeholder_formatted(doc, '{{NOME}}', cliente_txt)
         self.replace_placeholder_formatted(doc, '{{PROPOSTA}}', proposta_txt)
         self.replace_placeholder_formatted(doc, '{{DATA}}', data_txt)
